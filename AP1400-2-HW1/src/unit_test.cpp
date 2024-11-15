@@ -329,7 +329,7 @@ TEST(HW1Test, ERO_SUM) {
     for (size_t i{}; i < ero[3].size(); i++)
         EXPECT_NEAR(ero[3][i], matrix[0][i]*2+matrix[3][i], 0.03);
 }
-/*
+
 TEST(HW1Test, UPPER_TRIANGULAR1) {
     // Caution: empty matrix
     EXPECT_TRUE(algebra::upper_triangular(Matrix{}).empty());
@@ -364,6 +364,6 @@ TEST(HW1Test, BONUS) {
     EXPECT_NEAR(res2[2][1], 0, 0.03);
     EXPECT_NEAR(res2[2][2], 39/4.0, 0.03);
 }
-*/
+
 
 

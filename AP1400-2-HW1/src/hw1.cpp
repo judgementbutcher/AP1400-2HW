@@ -253,6 +253,7 @@ Matrix algebra::ero_multiply(const Matrix &matrix, size_t r, double c) {
     return re_matrix;
 }
 
+
 Matrix algebra::ero_sum(const Matrix &matrix, size_t r1, double c, size_t r2) {
     if( (r1 < 0 || r1 > matrix.size()) || (r2 < 0 || r2 > matrix.size() ) ) {
         throw std::logic_error("r1 or r2 out of range.");
@@ -272,5 +273,27 @@ Matrix algebra::ero_sum(const Matrix &matrix, size_t r1, double c, size_t r2) {
 
 
 Matrix algebra::upper_triangular(const Matrix &matrix) {
-    
+   if (matrix.size() == 0) {
+        return matrix;
+   } 
+   if (matrix.size() != matrix[0].size()) {
+        throw std::logic_error("non-square matrices have no upper triangular form");
+   }
+   Matrix re_matrix = matrix;
+   for(size_t i = 0;i < matrix.size();i++) {
+        if(re_matrix[i][i] == 0) {
+            for(size_t j = i+ 1; j < matrix.size();j++) {
+                if(re_matrix[j][i] != 0) {
+                    re_matrix = ero_swap(matrix, i, j);
+                    break;
+                }
+            }
+        }
+        for(size_t j = i+1;j < matrix.size();j++) {
+            if(re_matrix[j][i] != 0) {
+                re_matrix = ero_sum(re_matrix, i, -re_matrix[j][i] / re_matrix[i][i], j);
+            }
+        }
+   }
+   return re_matrix;
 }
