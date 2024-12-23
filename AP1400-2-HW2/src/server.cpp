@@ -1,5 +1,6 @@
 #include "server.h"
 #include "client.h"
+#include "crypto.h"
 #include <iostream>
 #include <memory>
 #include <random>
@@ -43,7 +44,7 @@ std::shared_ptr<Client> Server::add_client(std::string id) {
     return new_client;
 }
 
-std::shared_ptr<Client> Server::get_client(std::string id) {
+std::shared_ptr<Client> Server::get_client(std::string id) const{
     for (const auto & client : clients) {
         if(client.first->get_id() == id) {
             return client.first;
@@ -62,7 +63,7 @@ double Server::get_wallet(std::string id) const {
     return 0;
 }
 
-bool Server::parse_trx(std::string trx, std::string sender, std::string receiver, double value) {
+bool Server::parse_trx(std::string trx, std::string &sender, std::string &receiver, double &value) const{
     //这里利用正则表达式来判断trx是否标准
     std::regex pattern("^[a-zA-Z]+-[a-zA-Z]+-[0-9.]+$");
     //如果不匹配
@@ -70,31 +71,58 @@ bool Server::parse_trx(std::string trx, std::string sender, std::string receiver
         throw std::runtime_error("trx is not standard");
     }
     std::stringstream ss(trx);
-    std::string part;
-    //利用getline来读取一行，用-做分割
-    if(std::getline(ss,part,'-')) {
-        sender = part;
-        std::cout << sender << std::endl;
-    }
-
-    if(std::getline(ss,part,'-')) {
-        receiver = part;
-        std::cout << receiver << std::endl;
-    }
-
-    if(std::getline(ss, part)) {
-        value = std::stod(part);
-        std::cout << value << std::endl;
-    }
+    std::getline(ss, sender, '-');
+    std::getline(ss, receiver, '-');
+    std::string str_value;
+    std::getline(ss, str_value);
+    value = std::stod(str_value);
     return true;
 }
 
-bool Server::add_pending_trx(std::string trx, std::string signature) {
-    
+bool Server::add_pending_trx(std::string trx, std::string signature) const{
+    std::string sender, receiver;
+    double value;
+    //extract useful information
+    parse_trx(trx, sender, receiver, value);
+    auto sender_client = get_client(sender);
+    bool authentic = crypto::verifySignature(sender_client->get_publickey(), trx, signature);
+    if(authentic && get_wallet(sender) >= value) {
+        pending_trxs.push_back(trx);
+        return true;
+    }
+    return false;
 }
 
 size_t Server::mine() {
-
+    std::string mempool;
+    for(auto &trx: pending_trxs) {
+        mempool += trx;
+    }
+    bool is_success_mine = false;
+    size_t nonce;
+    while(!is_success_mine) {
+        for(auto it = clients.begin(); it != clients.end(); it++) {
+            std::string data = mempool;   
+            nonce = it->first->generate_nonce();
+            data += std::to_string(nonce);
+            std::string hash_data = crypto::sha256(data);
+            if (hash_data.substr(0,10).find("000")) {
+                std::cout << "Miner id: " << it->first->get_id() << std::endl;
+                it->second += 6.25;
+                is_success_mine = true;
+                break;
+            }
+        }
+    }
+    for(auto & trx : pending_trxs) {
+        std::string sender, receiver;
+        double value;
+        parse_trx(trx, sender, receiver, value);
+        auto sender_client = get_client(sender);
+        sender_client->transfer_money(receiver, value);
+    }
+    pending_trxs.clear();
+    return nonce;
 }
 
 

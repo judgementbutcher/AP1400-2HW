@@ -125,7 +125,7 @@ void crypto::Base64Decode(const char* b64message, unsigned char** buffer, size_t
   BIO_free_all(bio);
 }
 
- std::string crypto::signMessage(std::string privateKey, std::string plainText) {
+std::string crypto::signMessage(std::string privateKey, std::string plainText) {
   RSA* privateRSA = createPrivateRSA(privateKey); 
   unsigned char* encMessage;
   char* base64Text;
