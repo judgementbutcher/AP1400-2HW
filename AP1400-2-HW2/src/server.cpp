@@ -1,8 +1,9 @@
-#include "server.h"
-#include "client.h"
-#include "crypto.h"
+#include "../include/server.h"
+#include "../include/client.h"
+#include "../include/crypto.h"
 #include <iostream>
 #include <memory>
+#include <openssl/x509_vfy.h>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -63,9 +64,9 @@ double Server::get_wallet(std::string id) const {
     return 0;
 }
 
-bool Server::parse_trx(std::string trx, std::string &sender, std::string &receiver, double &value) const{
+bool Server::parse_trx(std::string trx, std::string &sender, std::string &receiver, double &value) {
     //这里利用正则表达式来判断trx是否标准
-    std::regex pattern("^[a-zA-Z]+-[a-zA-Z]+-[0-9.]+$");
+    std::regex pattern("^[a-zA-Z_]+-[a-zA-Z_]+-[0-9.]+$");
     //如果不匹配
     if (!std::regex_match(trx, pattern)) {
         throw std::runtime_error("trx is not standard");
@@ -84,6 +85,11 @@ bool Server::add_pending_trx(std::string trx, std::string signature) const{
     double value;
     //extract useful information
     parse_trx(trx, sender, receiver, value);
+    //需要判断clients里面有没有receiver
+    auto receiver_client = get_client(receiver);
+    if(!receiver_client) {
+        return false;
+    }
     auto sender_client = get_client(sender);
     bool authentic = crypto::verifySignature(sender_client->get_publickey(), trx, signature);
     if(authentic && get_wallet(sender) >= value) {
@@ -94,8 +100,8 @@ bool Server::add_pending_trx(std::string trx, std::string signature) const{
 }
 
 size_t Server::mine() {
-    std::string mempool;
-    for(auto &trx: pending_trxs) {
+    std::string mempool{};
+    for(const auto &trx: pending_trxs) {
         mempool += trx;
     }
     bool is_success_mine = false;
@@ -106,7 +112,7 @@ size_t Server::mine() {
             nonce = it->first->generate_nonce();
             data += std::to_string(nonce);
             std::string hash_data = crypto::sha256(data);
-            if (hash_data.substr(0,10).find("000")) {
+            if (hash_data.substr(0,10).find("000") != std::string::npos) {
                 std::cout << "Miner id: " << it->first->get_id() << std::endl;
                 it->second += 6.25;
                 is_success_mine = true;
@@ -119,7 +125,9 @@ size_t Server::mine() {
         double value;
         parse_trx(trx, sender, receiver, value);
         auto sender_client = get_client(sender);
-        sender_client->transfer_money(receiver, value);
+        auto receiver_client = get_client(receiver);
+        clients[sender_client] -= value; 
+        clients[receiver_client] += value;
     }
     pending_trxs.clear();
     return nonce;

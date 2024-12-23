@@ -1,4 +1,4 @@
-#include "crypto.h"
+#include "../include/crypto.h"
 
 RSA* crypto::createPrivateRSA(std::string key) {
   RSA *rsa = NULL;

@@ -1,6 +1,6 @@
-#include "client.h"
-#include "crypto.h"
-#include "server.h"
+#include "../include/client.h"
+#include "../include/crypto.h"
+#include "../include/server.h"
 #include <chrono>
 #include <random>
 #include <string>
@@ -10,22 +10,20 @@ Client::Client(std::string id, const Server& server) : id{std::move(id)}, server
     crypto::generate_key(this->public_key, this->private_key);
 }
 
-std::string Client::get_id() {
+std::string Client::get_id() const{
     return id;
 }
 
-std::string Client::get_publickey() {
+std::string Client::get_publickey() const{
     return public_key;
 }
 
-double Client::get_wallet() {
+double Client::get_wallet() const{
     return server->get_wallet(id);
 }
 
-std::string Client::sign(std::string txt) {
-    //首先对txt做哈希
-    std::string hash_txt{crypto::sha256(txt)};
-    std::string signature = crypto::signMessage(private_key, hash_txt);
+std::string Client::sign(std::string txt) const{
+    std::string signature = crypto::signMessage(private_key, txt);
     return signature;
 }
 
@@ -37,7 +35,7 @@ bool Client::transfer_money(std::string receiver, double value) {
     return result;
 }
 
-size_t Client::generate_nonce() {
+size_t Client::generate_nonce() const{
     //获取当前时间戳
     size_t timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 

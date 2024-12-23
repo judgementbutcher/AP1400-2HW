@@ -1,10 +1,12 @@
-
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "server.h"
-#include "client.h"
+#include "../include/server.h"
+#include "../include/client.h"
+#include "../include/crypto.h"
 
-/*
+extern std::vector<std::string> pending_trxs;
+
+
 TEST(HW1Test, TEST1) {
     Server server{};
     auto bryan{server.add_client("bryan")};
@@ -146,7 +148,7 @@ TEST(HW1Test, TEST15) {
     EXPECT_TRUE(clint->get_wallet()==3.5 ||clint->get_wallet()==3.5 ||clint->get_wallet()==9.75);
     EXPECT_TRUE(sarah->get_wallet()==13.25 || sarah->get_wallet()==7 || sarah->get_wallet()==7);
 }
-*/
+
 
 
 

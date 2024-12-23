@@ -1,7 +1,7 @@
 #include <iostream>
 #include <gtest/gtest.h>
-#include "client.h"
-#include "server.h"
+#include "../include/client.h"
+#include "../include/server.h"
 
 extern std::vector<std::string> pending_trxs;
 
